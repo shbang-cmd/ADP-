@@ -139,3 +139,195 @@ group_by + summarise는 ADP 실기 필수 문법이다.
 IQR 이상치 처리 방식은 실기에서 반복적으로 등장한다.
 
 case_when()은 파생변수 생성에서 가장 중요한 함수이다.
+
+
+
+
+Chapter 02. 탐색적 데이터 분석(EDA) 실전 문제 (Markdown Full Version)**
+
+아래 전체를 복사하면 2장 교재가 완성됩니다.
+
+# Chapter 02. 탐색적 데이터 분석(EDA) 실전 문제
+
+본 장에서는 ADP 실기에서 반복적으로 출제되는 탐색적 데이터 분석(EDA)의 핵심 요소들을 다룬다.  
+주요 주제는 **요약통계, 분포 파악, 시각화, 상관관계 분석, 범주형 변수 분석** 등이다.
+
+---
+
+## 📂 데이터셋 (health_data.csv)
+
+```r
+health_data <- read.csv(text = "
+id,gender,age,height,weight,smoking,blood_pressure
+1,M,34,175,78,Yes,132
+2,F,29,162,55,No,118
+3,M,42,180,92,Yes,145
+4,F,37,168,62,No,124
+5,M,50,172,85,No,138
+6,F,45,158,70,Yes,142
+7,M,28,181,76,No,120
+8,F,33,165,58,No,116
+9,M,40,178,88,Yes,150
+10,F,31,160,52,No,110
+")
+
+문제 1. 기본 요약통계 구하기
+
+다음 요구사항을 수행하시오.
+
+age, height, weight, blood_pressure 변수에 대해 평균·표준편차·중앙값을 구하라.
+
+gender별 평균 blood_pressure를 구하라.
+
+smoking 여부에 따른 평균 weight 차이를 분석하라.
+
+🔧 R 코드
+library(dplyr)
+
+# 1. 기본 요약통계
+summary_stats <- health_data %>%
+  summarise(
+    mean_age = mean(age),
+    sd_age   = sd(age),
+    median_age = median(age),
+
+    mean_height = mean(height),
+    sd_height = sd(height),
+    median_height = median(height),
+
+    mean_weight = mean(weight),
+    sd_weight = sd(weight),
+    median_weight = median(weight),
+
+    mean_bp = mean(blood_pressure),
+    sd_bp = sd(blood_pressure),
+    median_bp = median(blood_pressure)
+  )
+
+# 2. gender별 평균 혈압
+bp_by_gender <- health_data %>%
+  group_by(gender) %>%
+  summarise(mean_bp = mean(blood_pressure))
+
+# 3. smoking 여부에 따른 평균 체중
+weight_by_smoking <- health_data %>%
+  group_by(smoking) %>%
+  summarise(mean_weight = mean(weight))
+
+📊 해석
+
+혈압 평균은 약 129~130 수준으로, 남성 그룹이 여성보다 높은 혈압을 보인다.
+
+체중은 smoking = Yes 그룹이 다소 높은 경향을 보인다.
+
+요약통계를 통해 건강 관련 변수의 전반적 분포를 빠르게 파악할 수 있다.
+
+문제 2. 연속형 변수 분포 시각화
+
+다음 요구사항을 수행하시오.
+
+height 변수의 히스토그램을 그려라.
+
+weight 변수의 박스플롯(boxplot)을 생성하라.
+
+age 대비 blood_pressure의 산점도를 그려라.
+
+🔧 R 코드
+library(ggplot2)
+
+# 1. 히스토그램
+ggplot(health_data, aes(x = height)) +
+  geom_histogram(binwidth = 5, fill = "skyblue", color = "black") +
+  ggtitle("Height Distribution")
+
+# 2. 박스플롯
+ggplot(health_data, aes(y = weight)) +
+  geom_boxplot(fill = "orange") +
+  ggtitle("Weight Boxplot")
+
+# 3. 산점도
+ggplot(health_data, aes(x = age, y = blood_pressure)) +
+  geom_point(color = "red") +
+  geom_smooth(method = "lm", se = FALSE) +
+  ggtitle("Age vs Blood Pressure")
+
+📊 해석
+
+height 분포는 비교적 정규적 형태를 보인다.
+
+weight 박스플롯은 큰 이상치 없이 안정적이다.
+
+age가 증가할수록 blood_pressure가 증가하는 양의 상관관계가 시각적으로 확인된다.
+
+문제 3. 상관관계 분석
+
+다음 요구사항을 수행하시오.
+
+age, height, weight, blood_pressure 변수 간 상관행렬을 구하라.
+
+상관계수를 heatmap 형태로 시각화하라.
+
+가장 높은 양의 상관관계를 보이는 변수쌍을 찾고 해석하라.
+
+🔧 R 코드
+numeric_vars <- health_data %>%
+  select(age, height, weight, blood_pressure)
+
+cor_matrix <- cor(numeric_vars)
+
+# Heatmap
+library(reshape2)
+
+cor_melt <- melt(cor_matrix)
+
+ggplot(cor_melt, aes(Var1, Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white") +
+  ggtitle("Correlation Heatmap")
+
+📊 해석
+
+weight와 blood_pressure, age와 blood_pressure가 강한 양의 상관관계를 가진다.
+
+height는 건강 관련 변수들과의 상관성이 상대적으로 낮다.
+
+heatmap을 통해 변수 간 관계를 직관적으로 확인할 수 있다.
+
+문제 4. 범주형 변수 분석
+
+다음 요구사항을 수행하시오.
+
+gender별 평균 weight를 비교하는 막대그래프(bar plot)를 그려라.
+
+smoking 여부에 따른 blood_pressure 평균을 비교하는 boxplot을 그려라.
+
+🔧 R 코드
+# gender별 평균 weight barplot
+ggplot(health_data, aes(x = gender, y = weight, fill = gender)) +
+  stat_summary(fun = "mean", geom = "bar") +
+  ggtitle("Average Weight by Gender")
+
+# smoking별 blood pressure boxplot
+ggplot(health_data, aes(x = smoking, y = blood_pressure, fill = smoking)) +
+  geom_boxplot() +
+  ggtitle("Blood Pressure by Smoking Status")
+
+📊 해석
+
+남성이 여성보다 평균적으로 더 높은 체중을 가진다.
+
+smoking = Yes 그룹은 blood_pressure가 더 높은 경향을 보인다.
+
+범주형 변수 분석은 조별 특성 파악에 매우 유용하다.
+
+✔ Chapter 02 요약
+
+EDA는 실기에서 가장 중요한 단계이며 문제 난이도가 낮아 초반 점수를 확보할 수 있다.
+
+요약통계, 히스토그램, 박스플롯, 산점도는 기본 필수 요소이다.
+
+cor()와 heatmap은 연속형 변수 관계 분석의 핵심 도구이다.
+
+group_by + summarise는 범주형 변수 분석의 기본 구조이다.
+
+시각화는 ggplot2 기반으로 그려야 채점에 유리하다.
